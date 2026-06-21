@@ -11,7 +11,9 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState([]);
 
-  const BASE_URL = import.meta.env.VITE_API_URL.replace("/api", "");
+  const BASE_URL =
+  import.meta.env.VITE_API_URL?.replace("/api", "") ||
+  "https://url-shortener-backend-9drd.onrender.com";
 
   useEffect(() => {
     fetchHistory();
