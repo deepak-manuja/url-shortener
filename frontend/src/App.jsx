@@ -11,7 +11,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState([]);
 
-  const BASE_URL = import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:5000";
+  const BASE_URL = import.meta.env.VITE_API_URL.replace("/api", "");
 
   useEffect(() => {
     fetchHistory();
