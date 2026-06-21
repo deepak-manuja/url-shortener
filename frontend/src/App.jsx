@@ -55,7 +55,7 @@ export default function App() {
       <nav className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
         <div className="flex items-center gap-6">
           <span className="text-lg font-semibold tracking-tight text-gray-900">✂ Snip</span>
-          <a href="https://github.com/areeedeepak" target="_blank" rel="noreferrer"
+          <a href="https://github.com/deepak-manuja" target="_blank" rel="noreferrer"
             className="text-sm text-gray-500 hover:text-gray-800 transition-colors">GitHub</a>
         </div>
         <a href="#history"
