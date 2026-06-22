@@ -11,7 +11,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState([]);
 
-  const BASE_URL =
+  const BASE_URL = "https://www.spliter.xyz";
   import.meta.env.VITE_API_URL?.replace("/api", "") ||
   "https://url-shortener-backend-9drd.onrender.com";
 
