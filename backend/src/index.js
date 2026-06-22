@@ -1,4 +1,5 @@
 const express = require("express");
+const authRoutes = require("./routes/auth");
 const mongoose = require("mongoose");
 const cors = require("cors");
 require("dotenv").config();
@@ -19,6 +20,7 @@ app.use(express.json());
 
 // Routes
 app.use("/api", urlRoutes);
+app.use("/api/auth", authRoutes);
 
 // Redirect short URL
 app.get("/:code", async (req, res) => {
