@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://spliter.xyz/api"
+  baseURL: "https://url-shortener-backend-9drd.onrender.com/api"
 });
 
 export const shortenUrl = (originalUrl, customAlias) =>
