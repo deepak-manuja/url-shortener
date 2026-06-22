@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const QRCode = require("qrcode");
 const validUrl = require("valid-url");
 const { nanoid } = require("nanoid");
 const Url = require("../models/Url");
@@ -54,16 +55,28 @@ router.post("/shorten", optionalAuth, async (req, res) => {
       }
     }
 
-    const url = await Url.create({
-      originalUrl,
-      shortCode,
-      userId: req.user ? req.user._id : null,
-    });
+   const shortUrl = `${process.env.BASE_URL}/${shortCode}`;
+
+   const qrCode = await QRCode.toDataURL(shortUrl);
+
+   console.log("Generated QR:", qrCode)
+
+
+   const url = await Url.create({
+    originalUrl,
+    shortCode,
+    qrCode,
+    userId: req.user ? req.user._id : null,
+   });
+
+      console.log("Saved URL document:", url),
+      console.log("url.qrCode =", url.qrCode)
 
     res.status(201).json({
       shortCode: url.shortCode,
       shortUrl: `${process.env.BASE_URL}/${url.shortCode}`,
       clicks: 0,
+      qrCode: url.qrCode,
     });
   } catch (err) {
     res.status(500).json({ error: "Server error" });

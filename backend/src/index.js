@@ -13,7 +13,9 @@ const app = express();
 app.use(cors({
   origin: [
     "http://localhost:5173",
-    "https://www.spliter.xyz"
+    "http://localhost:5175",
+    "https://www.spliter.xyz",
+    "https://spliter.xyz"
   ]
 }));
 app.use(express.json());
