@@ -117,6 +117,23 @@ function Home() {
             >
               {BASE_URL}/{result.shortCode}
             </a>
+            <div className="mt-6 flex flex-col items-center">
+
+            <img
+            src={result.qrCode}
+            alt="QR Code"
+            className="w-40 h-40 rounded-lg border"
+             />
+
+            <a
+            href={result.qrCode}
+            download={`${result.shortCode}.png`}
+            className="mt-4 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition"
+            >
+            Download QR
+            </a>
+
+            </div>
             <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={() => copy(`${BASE_URL}/${result.shortCode}`)}
