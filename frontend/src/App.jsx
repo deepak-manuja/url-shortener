@@ -8,7 +8,9 @@ import Login from "./components/Login";
 import Signup from "./components/Signup";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-const BASE_URL = "https://www.spliter.xyz";
+const BASE_URL = import.meta.env.DEV 
+  ? "http://localhost:5174"  // Development
+  : "https://www.spliter.xyz";  // Production
 
 function Home() {
   const [url, setUrl] = useState("");
@@ -210,7 +212,16 @@ function Redirect() {
 
   useEffect(() => {
     if (code) {
-      window.location.replace(`https://url-shortener-backend-9drd.onrender.com/${code}`);
+      // Use local backend in development, production backend in production
+      const backendUrl = import.meta.env.DEV
+        ? "http://localhost:5000"  // Development: Local backend
+        : "https://url-shortener-backend-9drd.onrender.com";  // Production: Render backend
+      const redirectUrl = `${backendUrl}/${code}`;
+      
+      console.log("🔗 Redirecting to:", redirectUrl);
+      
+      // Direct redirect - let browser handle the HTTP 302 redirect naturally
+      window.location.replace(redirectUrl);
     }
   }, [code]);
 

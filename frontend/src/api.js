@@ -1,7 +1,12 @@
 import axios from "axios";
 
+// Use local backend in development, production backend in production
+const baseURL = import.meta.env.DEV 
+  ? "http://localhost:5000/api"  // Development: Local backend
+  : "https://url-shortener-backend-9drd.onrender.com/api";  // Production: Render backend
+
 const api = axios.create({
-  baseURL: "https://url-shortener-backend-9drd.onrender.com/api",
+  baseURL: baseURL,
 });
 
 // Har request mein token automatically attach hoga

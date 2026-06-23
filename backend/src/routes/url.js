@@ -36,11 +36,18 @@ router.post("/shorten", optionalAuth, async (req, res) => {
   if (!validUrl.isUri(originalUrl)) return res.status(400).json({ error: "Invalid URL" });
 
   try {
-    const shortCode = customAlias || nanoid(6);
+    // Normalize shortCode (lowercase, trim, no spaces)
+    const normalizedCustomAlias = customAlias ? customAlias.trim().toLowerCase().replace(/\s+/g, "-") : null;
+    const shortCode = normalizedCustomAlias || nanoid(6).toLowerCase();
+
+    console.log(`📝 Creating short link: ${shortCode} -> ${originalUrl}`);
 
     if (customAlias) {
-      const taken = await Url.findOne({ shortCode: customAlias });
-      if (taken) return res.status(409).json({ error: "Custom alias already taken" });
+      const taken = await Url.findOne({ shortCode: shortCode });
+      if (taken) {
+        console.log(`⚠️ Custom alias already taken: ${shortCode}`);
+        return res.status(409).json({ error: "Custom alias already taken" });
+      }
     }
 
     // Logged in user ke liye duplicate check
@@ -48,6 +55,7 @@ router.post("/shorten", optionalAuth, async (req, res) => {
       const existing = await Url.findOne({ originalUrl, userId: req.user._id });
       if (existing) {
         const baseUrl = (process.env.BASE_URL || "").replace(/\/$/, "");
+        console.log(`✓ Duplicate link found for user: ${existing.shortCode}`);
         return res.json({
           shortCode: existing.shortCode,
           shortUrl: `${baseUrl}/${existing.shortCode}`,
@@ -56,23 +64,25 @@ router.post("/shorten", optionalAuth, async (req, res) => {
       }
     }
 
-   const baseUrl = (process.env.BASE_URL || "").replace(/\/$/, "");
-   const shortUrl = `${baseUrl}/${shortCode}`;
+    const baseUrl = (process.env.BASE_URL || "").replace(/\/$/, "");
+    const shortUrl = `${baseUrl}/${shortCode}`;
 
-   const qrCode = await QRCode.toDataURL(shortUrl);
+    console.log(`🔗 Short URL: ${shortUrl}`);
 
-   console.log("Generated QR:", qrCode)
+    const qrCode = await QRCode.toDataURL(shortUrl);
 
+    const url = await Url.create({
+      originalUrl,
+      shortCode,
+      qrCode,
+      userId: req.user ? req.user._id : null,
+    });
 
-   const url = await Url.create({
-    originalUrl,
-    shortCode,
-    qrCode,
-    userId: req.user ? req.user._id : null,
-   });
-
-      console.log("Saved URL document:", url),
-      console.log("url.qrCode =", url.qrCode)
+    console.log(`✅ URL saved successfully:`, {
+      id: url._id,
+      shortCode: url.shortCode,
+      originalUrl: url.originalUrl,
+    });
 
     res.status(201).json({
       shortCode: url.shortCode,
@@ -81,16 +91,24 @@ router.post("/shorten", optionalAuth, async (req, res) => {
       qrCode: url.qrCode,
     });
   } catch (err) {
-    res.status(500).json({ error: "Server error" });
+    console.error("❌ Error creating short link:", err);
+    res.status(500).json({ error: "Server error: " + err.message });
   }
 });
 
 // GET /api/stats/:code — public
 router.get("/stats/:code", async (req, res) => {
   try {
-    const url = await Url.findOne({ shortCode: req.params.code });
-    if (!url) return res.status(404).json({ error: "URL not found" });
+    const code = req.params.code.toLowerCase().trim();
+    console.log(`📊 Stats request for code: ${code}`);
+    
+    const url = await Url.findOne({ shortCode: code });
+    if (!url) {
+      console.log(`⚠️ URL not found for code: ${code}`);
+      return res.status(404).json({ error: "URL not found" });
+    }
 
+    console.log(`✓ Stats found:`, { code: url.shortCode, clicks: url.clicks });
     res.json({
       originalUrl: url.originalUrl,
       shortCode: url.shortCode,
@@ -98,6 +116,7 @@ router.get("/stats/:code", async (req, res) => {
       createdAt: url.createdAt,
     });
   } catch (err) {
+    console.error("❌ Error fetching stats:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -115,14 +134,25 @@ router.get("/all", protect, async (req, res) => {
 // DELETE /api/:code — PROTECTED, sirf apna link delete karo
 router.delete("/:code", protect, async (req, res) => {
   try {
-    const url = await Url.findOne({ shortCode: req.params.code });
-    if (!url) return res.status(404).json({ error: "URL not found" });
-    if (url.userId?.toString() !== req.user._id.toString())
+    const code = req.params.code.toLowerCase().trim();
+    console.log(`🗑️ Delete request for code: ${code}`);
+    
+    const url = await Url.findOne({ shortCode: code });
+    if (!url) {
+      console.log(`⚠️ URL not found for deletion: ${code}`);
+      return res.status(404).json({ error: "URL not found" });
+    }
+    
+    if (url.userId?.toString() !== req.user._id.toString()) {
+      console.log(`❌ Unauthorized delete attempt for code: ${code}`);
       return res.status(403).json({ error: "Not authorized" });
+    }
 
     await url.deleteOne();
+    console.log(`✅ URL deleted:`, code);
     res.json({ message: "URL deleted" });
   } catch (err) {
+    console.error("❌ Error deleting URL:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
