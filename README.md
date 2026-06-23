@@ -1,8 +1,8 @@
-# 🚀 Spliter.xyz - Smart URL Shortener
+# 🚀 Spliter - Smart URL Shortener
 
 A modern URL shortening platform built with the MERN stack that allows users to create, manage, and track shortened links with analytics, QR code generation, and user authentication.
 
-🌐 Live Demo: https://spliter.xyz
+🌐 Live link: https://spliter.xyz
 
 ---
 
