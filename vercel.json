@@ -1,7 +1,7 @@
 {
   "rewrites": [
     {
-      "source": "/:shortCode([a-zA-Z0-9]{4,10})",
+      "source": "/:shortCode",
       "destination": "https://url-shortener-backend-9drd.onrender.com/:shortCode"
     },
     {
