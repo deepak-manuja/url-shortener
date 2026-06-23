@@ -1,62 +1,91 @@
-# Snip — URL Shortener
+# 🚀 Spliter.xyz - Smart URL Shortener
 
-A minimal URL shortener with click analytics. Built with React, Node.js, Express, and MongoDB.
+A modern URL shortening platform built with the MERN stack that allows users to create, manage, and track shortened links with analytics, QR code generation, and user authentication.
 
-## Features
-- Shorten any URL instantly
-- Custom alias support
-- Click tracking
-- Recent links history
-
-## Tech Stack
-- **Frontend:** React + Vite + TailwindCSS
-- **Backend:** Node.js + Express
-- **Database:** MongoDB Atlas
+🌐 Live Demo: https://spliter.xyz
 
 ---
 
-## Local Setup
+## ✨ Features
 
-### Backend
-```bash
-cd backend
-npm install
-cp .env.example .env   # fill in your MongoDB URI
-npm run dev
-```
+### 🔗 URL Management
+- Shorten long URLs instantly
+- Custom aliases for branded links
+- One-click copy functionality
+- Fast redirection
+
+### 👤 User Authentication
+- Secure user registration
+- Login & logout functionality
+- JWT-based authentication
+- Protected dashboard
+
+### 📊 Analytics Dashboard
+- Total clicks tracking
+- Link performance monitoring
+- User-specific URL history
+- Detailed statistics
+
+### 📱 QR Code Generation
+- Generate QR codes for shortened URLs
+- Easy sharing across devices
+- Download QR codes instantly
+
+### 🔒 Security Features
+- URL validation
+- Protected API endpoints
+- Secure password storage
+- Authentication middleware
+
+### 🎨 Modern UI
+- Responsive design
+- Clean and intuitive interface
+- Mobile-friendly experience
+- Smooth user interactions
+
+---
+
+## 🛠️ Tech Stack
 
 ### Frontend
+- React.js
+- Vite
+- React Router
+- Axios
+- Tailwind CSS
+- React Hot Toast
+- Lucide React
+
+### Backend
+- Node.js
+- Express.js
+- MongoDB
+- Mongoose
+- JWT Authentication
+- bcrypt.js
+
+### Deployment
+- Frontend: Vercel
+- Backend: Render
+- Database: MongoDB Atlas
+
+---
+
+## 📂 Project Structure
+
 ```bash
-cd frontend
-npm install
-cp .env.example .env   # set VITE_API_URL to your backend URL
-npm run dev
-```
-
----
-
-## Deploy
-
-### Backend → Render
-1. Push to GitHub
-2. New Web Service on [render.com](https://render.com)
-3. Root directory: `backend`
-4. Build command: `npm install`
-5. Start command: `npm start`
-6. Add env vars: `MONGODB_URI`, `BASE_URL` (your Render URL), `FRONTEND_URL`
-
-### Frontend → Vercel
-1. New project on [vercel.com](https://vercel.com)
-2. Root directory: `frontend`
-3. Add env var: `VITE_API_URL` = your Render backend URL + `/api`
-
----
-
-## API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/shorten` | Shorten a URL |
-| GET | `/api/all` | Get recent 20 URLs |
-| GET | `/api/stats/:code` | Get stats for a short code |
-| GET | `/:code` | Redirect to original URL |
+url-shortener/
+│
+├── frontend/
+│   ├── src/
+│   ├── components/
+│   ├── pages/
+│   └── api/
+│
+├── backend/
+│   ├── routes/
+│   ├── models/
+│   ├── middleware/
+│   └── controllers/
+│
+└── README.md
