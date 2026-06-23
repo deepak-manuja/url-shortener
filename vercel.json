@@ -1,14 +1,12 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "experimentalServices": {
-    "frontend": {
-      "root": "frontend",
-      "routePrefix": "/",
-      "framework": "vite"
+  "rewrites": [
+    {
+      "source": "/:shortCode([a-zA-Z0-9]{4,10})",
+      "destination": "https://url-shortener-backend-9drd.onrender.com/:shortCode"
     },
-    "backend": {
-      "root": "backend",
-      "routePrefix": "/api"
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
-  }
+  ]
 }
