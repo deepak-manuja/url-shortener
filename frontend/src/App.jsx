@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Routes, Route, Link, useNavigate } from "react-router-dom";
+import { Routes, Route, Link, useNavigate, useParams } from "react-router-dom";
 import { Toaster, toast } from "react-hot-toast";
 import { Copy, ExternalLink, BarChart2, ChevronDown, ChevronUp, ArrowRight, LogOut, User } from "lucide-react";
 import { shortenUrl, getAllUrls } from "./api";
@@ -205,6 +205,23 @@ function Home() {
   );
 }
 
+function Redirect() {
+  const { code } = useParams();
+
+  useEffect(() => {
+    if (code) {
+      window.location.replace(`https://url-shortener-backend-9drd.onrender.com/${code}`);
+    }
+  }, [code]);
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-gray-500">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mb-4"></div>
+      <p className="text-sm font-medium">Redirecting you to your destination...</p>
+    </div>
+  );
+}
+
 export default function App() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -266,6 +283,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/:code" element={<Redirect />} />
       </Routes>
     </div>
   );

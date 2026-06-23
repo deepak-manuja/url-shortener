@@ -47,15 +47,17 @@ router.post("/shorten", optionalAuth, async (req, res) => {
     if (req.user) {
       const existing = await Url.findOne({ originalUrl, userId: req.user._id });
       if (existing) {
+        const baseUrl = (process.env.BASE_URL || "").replace(/\/$/, "");
         return res.json({
           shortCode: existing.shortCode,
-          shortUrl: `${process.env.BASE_URL}/${existing.shortCode}`,
+          shortUrl: `${baseUrl}/${existing.shortCode}`,
           clicks: existing.clicks,
         });
       }
     }
 
-   const shortUrl = `${process.env.BASE_URL}/${shortCode}`;
+   const baseUrl = (process.env.BASE_URL || "").replace(/\/$/, "");
+   const shortUrl = `${baseUrl}/${shortCode}`;
 
    const qrCode = await QRCode.toDataURL(shortUrl);
 
@@ -74,7 +76,7 @@ router.post("/shorten", optionalAuth, async (req, res) => {
 
     res.status(201).json({
       shortCode: url.shortCode,
-      shortUrl: `${process.env.BASE_URL}/${url.shortCode}`,
+      shortUrl: `${baseUrl}/${url.shortCode}`,
       clicks: 0,
       qrCode: url.qrCode,
     });
