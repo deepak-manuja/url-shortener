@@ -30,7 +30,11 @@ const optionalAuth = (req, res, next) => {
 
 // POST /api/shorten — logged in ho toh link user se link hoga
 router.post("/shorten", optionalAuth, async (req, res) => {
-  const { originalUrl, customAlias } = req.body;
+ const {
+  originalUrl,
+  customAlias,
+  expiryDays
+} = req.body;
 
   if (!originalUrl) return res.status(400).json({ error: "URL is required" });
   if (!validUrl.isUri(originalUrl)) return res.status(400).json({ error: "Invalid URL" });
@@ -71,12 +75,22 @@ router.post("/shorten", optionalAuth, async (req, res) => {
 
     const qrCode = await QRCode.toDataURL(shortUrl);
 
+    let expiresAt = null;
+
+  if (expiryDays) {
+  expiresAt = new Date();
+  expiresAt.setDate(
+    expiresAt.getDate() + Number(expiryDays)
+  );
+}
+
     const url = await Url.create({
-      originalUrl,
-      shortCode,
-      qrCode,
-      userId: req.user ? req.user._id : null,
-    });
+  originalUrl,
+  shortCode,
+  qrCode,
+  expiresAt,
+  userId: req.user ? req.user._id : null,
+  });
 
     console.log(`✅ URL saved successfully:`, {
       id: url._id,
@@ -114,6 +128,7 @@ router.get("/stats/:code", async (req, res) => {
       shortCode: url.shortCode,
       clicks: url.clicks,
       createdAt: url.createdAt,
+      expiresAt: url.expiresAt,
     });
   } catch (err) {
     console.error("❌ Error fetching stats:", err);

@@ -14,6 +14,10 @@ const urlSchema = new mongoose.Schema(
     qrCode: {
       type: String
     },
+    expiresAt: {
+      type: Date,
+      default : null,
+    },
     clicks: {
       type: Number,
       default: 0,

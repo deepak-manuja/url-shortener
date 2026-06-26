@@ -16,8 +16,16 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-export const shortenUrl = (originalUrl, customAlias) =>
-  api.post("/shorten", { originalUrl, customAlias });
+export const shortenUrl = (
+  originalUrl,
+  customAlias,
+  expiryDays
+) =>
+  api.post("/shorten", {
+    originalUrl,
+    customAlias,
+    expiryDays,
+  });
 
 export const getAllUrls = () => api.get("/all");
 
