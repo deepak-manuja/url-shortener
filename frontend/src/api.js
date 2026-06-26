@@ -19,13 +19,18 @@ api.interceptors.request.use((config) => {
 export const shortenUrl = (
   originalUrl,
   customAlias,
-  expiryDays
+  expiryDays,
+  pin
 ) =>
   api.post("/shorten", {
     originalUrl,
     customAlias,
     expiryDays,
+    pin,
   });
+
+export const verifyPin = (code, pin) =>
+  api.post(`/verify-pin/${code}`, { pin });
 
 export const getAllUrls = () => api.get("/all");
 

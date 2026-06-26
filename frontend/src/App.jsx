@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Routes, Route, Link, useNavigate, useParams } from "react-router-dom";
 import { Toaster, toast } from "react-hot-toast";
-import { Copy, ExternalLink, BarChart2, ChevronDown, ChevronUp, ArrowRight, LogOut, User } from "lucide-react";
+import { Copy, ExternalLink, BarChart2, ChevronDown, ChevronUp, ArrowRight, LogOut, User, Lock } from "lucide-react";
 import { shortenUrl, getAllUrls } from "./api";
+import { verifyPin } from "./api";
 import { useAuth } from "./context/AuthContext";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
@@ -53,6 +54,7 @@ function Home() {
   const [url, setUrl] = useState("");
   const [customAlias, setCustomAlias] = useState("");
   const [expiryDays, setExpiryDays] = useState("");
+  const [pin, setPin] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -77,9 +79,10 @@ function Home() {
     setLoading(true);
     try {
       const res = await shortenUrl(
-      url.trim(),
-      customAlias.trim() || undefined,
-      expiryDays || null
+        url.trim(),
+        customAlias.trim() || undefined,
+        expiryDays || null,
+        pin || null,
       );
       setResult(res.data);
       if (user) await fetchHistory();
@@ -134,40 +137,45 @@ function Home() {
 
         {showAdvanced && (
   <div className="mt-3 bg-white border border-gray-200 rounded-2xl px-4 py-4 shadow-sm">
-    
-    <label className="text-xs text-gray-400 mb-1 block">
-      Custom alias
-    </label>
 
+    <label className="text-xs text-gray-400 mb-1 block">Custom alias</label>
     <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
-      <span className="text-xs text-gray-400">
-        {BASE_URL}/
-      </span>
-
+      <span className="text-xs text-gray-400">{BASE_URL}/</span>
       <input
         type="text"
         value={customAlias}
-        onChange={(e) =>
-          setCustomAlias(e.target.value.replace(/\s/g, ""))
-        }
+        onChange={(e) => setCustomAlias(e.target.value.replace(/\s/g, ""))}
         placeholder="my-link"
         className="flex-1 text-sm bg-transparent outline-none text-gray-700 placeholder:text-gray-300"
       />
     </div>
 
-    <div className="mt-3">
-      <label className="text-xs text-gray-400 mb-1 block">
-        Expiry (Days)
-      </label>
-
-      <input
-        type="number"
-        min="1"
-        value={expiryDays}
-        onChange={(e) => setExpiryDays(e.target.value)}
-        placeholder="e.g. 7"
-        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm"
-      />
+    <div className="mt-3 flex gap-3">
+      <div className="flex-1">
+        <label className="text-xs text-gray-400 mb-1 block">Expiry (Days)</label>
+        <input
+          type="number"
+          min="1"
+          value={expiryDays}
+          onChange={(e) => setExpiryDays(e.target.value)}
+          placeholder="e.g. 7"
+          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-gray-400 transition-colors"
+        />
+      </div>
+      <div className="flex-1">
+        <label className="text-xs text-gray-400 mb-1 flex items-center gap-1">
+          <Lock size={10} /> PIN (4 digits)
+        </label>
+        <input
+          type="password"
+          inputMode="numeric"
+          maxLength={4}
+          value={pin}
+          onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+          placeholder="e.g. 1234"
+          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-gray-400 transition-colors tracking-widest"
+        />
+      </div>
     </div>
 
   </div>
@@ -188,7 +196,14 @@ function Home() {
               >
                 {BASE_URL}/{result.shortCode}
               </a>
-              <LinkStatusBadge expiresAt={result.expiresAt} />
+              <div className="flex items-center gap-2 flex-wrap">
+                <LinkStatusBadge expiresAt={result.expiresAt} />
+                {result.isPasswordProtected && (
+                  <span className="inline-flex items-center gap-1 text-xs font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">
+                    <Lock size={9} /> PIN protected
+                  </span>
+                )}
+              </div>
             </div>
             <div className="mt-6 flex flex-col items-center">
 
@@ -250,6 +265,11 @@ function Home() {
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   <LinkStatusBadge expiresAt={item.expiresAt} />
+                  {item.passwordHash && (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">
+                      <Lock size={9} /> PIN
+                    </span>
+                  )}
                   <div className="flex items-center gap-1 text-xs text-gray-400">
                     <BarChart2 size={12} />
                     {item.clicks}
@@ -275,6 +295,94 @@ function Home() {
           </p>
         </div>
       )}
+    </div>
+  );
+}
+
+function PinGate({ code, onSuccess }) {
+  const [digits, setDigits] = useState(["", "", "", ""]);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const containerRef = useRef(null);
+
+  const focusInput = (i) => {
+    containerRef.current?.querySelectorAll("input")[i]?.focus();
+  };
+
+  const handleChange = (i, val) => {
+    if (!/^\d?$/.test(val)) return;
+    const next = [...digits];
+    next[i] = val;
+    setDigits(next);
+    setError("");
+    if (val && i < 3) focusInput(i + 1);
+  };
+
+  const handleKeyDown = (i, e) => {
+    if (e.key === "Backspace" && !digits[i] && i > 0) {
+      focusInput(i - 1);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const pin = digits.join("");
+    if (pin.length < 4) return setError("Enter all 4 digits");
+    setLoading(true);
+    try {
+      await verifyPin(code, pin);
+      onSuccess();
+    } catch (err) {
+      setError(err.response?.data?.error || "Incorrect PIN");
+      setDigits(["", "", "", ""]);
+      setTimeout(() => focusInput(0), 0);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center">
+      <div className="w-full max-w-xs bg-white border border-gray-200 rounded-2xl px-8 py-10 shadow-sm">
+        <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-2xl mx-auto mb-5">
+          <Lock size={20} className="text-gray-600" />
+        </div>
+        <h1 className="text-xl font-semibold text-gray-900 mb-1">Protected link</h1>
+        <p className="text-sm text-gray-400 mb-7">Enter the 4-digit PIN to continue</p>
+
+        <form onSubmit={handleSubmit}>
+          <div ref={containerRef} className="flex justify-center gap-3 mb-5">
+            {digits.map((d, i) => (
+              <input
+                key={i}
+                type="password"
+                inputMode="numeric"
+                maxLength={1}
+                value={d}
+                onChange={(e) => handleChange(i, e.target.value)}
+                onKeyDown={(e) => handleKeyDown(i, e)}
+                className={`w-12 h-12 text-center text-xl font-semibold border rounded-xl outline-none transition-colors
+                  ${error ? "border-red-300 bg-red-50" : "border-gray-200 focus:border-gray-400"}`}
+                autoFocus={i === 0}
+              />
+            ))}
+          </div>
+
+          {error && <p className="text-xs text-red-500 mb-4">{error}</p>}
+
+          <button
+            type="submit"
+            disabled={loading || digits.join("").length < 4}
+            className="w-full bg-gray-900 text-white text-sm py-2.5 rounded-xl hover:bg-gray-700 transition-colors disabled:opacity-40"
+          >
+            {loading ? "Verifying..." : "Unlock"}
+          </button>
+        </form>
+
+        <Link to="/" className="text-xs text-gray-400 hover:text-gray-600 mt-5 inline-block transition-colors">
+          ← Back to Snip
+        </Link>
+      </div>
     </div>
   );
 }
@@ -337,31 +445,40 @@ function LinkExpired() {
 function Redirect() {
   const { code } = useParams();
   const [expired, setExpired] = useState(false);
+  const [needsPin, setNeedsPin] = useState(false);
+  const [backendUrl] = useState(
+    import.meta.env.DEV
+      ? "http://localhost:5000"
+      : "https://url-shortener-backend-9drd.onrender.com"
+  );
 
   useEffect(() => {
     if (!code) return;
 
-    const backendUrl = import.meta.env.DEV
-      ? "http://localhost:5000"
-      : "https://url-shortener-backend-9drd.onrender.com";
-
-    // Check stats first to detect expiry before navigating away
+    // Check stats first to detect expiry / PIN before navigating away
     fetch(`${backendUrl}/api/stats/${code}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.expiresAt && new Date() > new Date(data.expiresAt)) {
           setExpired(true);
+        } else if (data.isPasswordProtected) {
+          setNeedsPin(true);
         } else {
           window.location.replace(`${backendUrl}/${code}`);
         }
       })
       .catch(() => {
-        // If stats fetch fails, try the redirect anyway
         window.location.replace(`${backendUrl}/${code}`);
       });
   }, [code]);
 
+  const handlePinSuccess = () => {
+    // After correct PIN, do the redirect
+    window.location.replace(`${backendUrl}/${code}`);
+  };
+
   if (expired) return <LinkExpired />;
+  if (needsPin) return <PinGate code={code} onSuccess={handlePinSuccess} />;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-gray-500">

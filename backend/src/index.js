@@ -46,13 +46,9 @@ app.get("/:code", async (req, res) => {
       console.log(`Sample codes:`, allUrls.map(u => u.shortCode));
       return res.status(404).json({ error: "URL not found" });
     }
-     if (
-      url.expiresAt &&
-      new Date() > url.expiresAt
-    ) {
-      return res.status(410).json({
-        error: "This link has expired",
-      });
+
+    if (url.expiresAt && new Date() > url.expiresAt) {
+      return res.status(410).json({ error: "This link has expired" });
     }
 
     url.clicks += 1;

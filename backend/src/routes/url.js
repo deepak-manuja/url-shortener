@@ -3,6 +3,7 @@ const router = express.Router();
 const QRCode = require("qrcode");
 const validUrl = require("valid-url");
 const { nanoid } = require("nanoid");
+const bcrypt = require("bcryptjs");
 const Url = require("../models/Url");
 const protect = require("../middleware/auth");
 
@@ -33,11 +34,13 @@ router.post("/shorten", optionalAuth, async (req, res) => {
  const {
   originalUrl,
   customAlias,
-  expiryDays
+  expiryDays,
+  pin,
 } = req.body;
 
   if (!originalUrl) return res.status(400).json({ error: "URL is required" });
   if (!validUrl.isUri(originalUrl)) return res.status(400).json({ error: "Invalid URL" });
+  if (pin && !/^\d{4}$/.test(pin)) return res.status(400).json({ error: "PIN must be exactly 4 digits" });
 
   try {
     // Normalize shortCode (lowercase, trim, no spaces)
@@ -76,21 +79,24 @@ router.post("/shorten", optionalAuth, async (req, res) => {
     const qrCode = await QRCode.toDataURL(shortUrl);
 
     let expiresAt = null;
+    if (expiryDays) {
+      expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + Number(expiryDays));
+    }
 
-  if (expiryDays) {
-  expiresAt = new Date();
-  expiresAt.setDate(
-    expiresAt.getDate() + Number(expiryDays)
-  );
-}
+    let passwordHash = null;
+    if (pin) {
+      passwordHash = await bcrypt.hash(pin, 10);
+    }
 
     const url = await Url.create({
-  originalUrl,
-  shortCode,
-  qrCode,
-  expiresAt,
-  userId: req.user ? req.user._id : null,
-  });
+      originalUrl,
+      shortCode,
+      qrCode,
+      expiresAt,
+      passwordHash,
+      userId: req.user ? req.user._id : null,
+    });
 
     console.log(`✅ URL saved successfully:`, {
       id: url._id,
@@ -104,6 +110,7 @@ router.post("/shorten", optionalAuth, async (req, res) => {
       clicks: 0,
       qrCode: url.qrCode,
       expiresAt: url.expiresAt,
+      isPasswordProtected: !!url.passwordHash,
     });
   } catch (err) {
     console.error("❌ Error creating short link:", err);
@@ -130,9 +137,32 @@ router.get("/stats/:code", async (req, res) => {
       clicks: url.clicks,
       createdAt: url.createdAt,
       expiresAt: url.expiresAt,
+      isPasswordProtected: !!url.passwordHash,
     });
   } catch (err) {
     console.error("❌ Error fetching stats:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// POST /api/verify-pin/:code — verify PIN before redirect
+router.post("/verify-pin/:code", async (req, res) => {
+  try {
+    const code = req.params.code.toLowerCase().trim();
+    const { pin } = req.body;
+
+    const url = await Url.findOne({ shortCode: code });
+    if (!url) return res.status(404).json({ error: "URL not found" });
+
+    if (!url.passwordHash) return res.json({ valid: true }); // no pin set
+
+    if (!pin) return res.status(400).json({ error: "PIN required" });
+
+    const isMatch = await bcrypt.compare(String(pin), url.passwordHash);
+    if (!isMatch) return res.status(401).json({ error: "Incorrect PIN" });
+
+    res.json({ valid: true });
+  } catch (err) {
     res.status(500).json({ error: "Server error" });
   }
 });

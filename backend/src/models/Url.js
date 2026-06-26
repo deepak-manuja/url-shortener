@@ -16,7 +16,11 @@ const urlSchema = new mongoose.Schema(
     },
     expiresAt: {
       type: Date,
-      default : null,
+      default: null,
+    },
+    passwordHash: {
+      type: String,
+      default: null,
     },
     clicks: {
       type: Number,
