@@ -12,6 +12,43 @@ const BASE_URL = import.meta.env.DEV
   ? "http://localhost:5174"  // Development
   : "https://www.spliter.xyz";  // Production
 
+function LinkStatusBadge({ expiresAt }) {
+  if (!expiresAt) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+        🟢 Active
+      </span>
+    );
+  }
+
+  const now = new Date();
+  const expiry = new Date(expiresAt);
+  const msLeft = expiry - now;
+  const hoursLeft = msLeft / (1000 * 60 * 60);
+
+  if (msLeft <= 0) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-red-500 bg-red-50 px-2 py-0.5 rounded-full">
+        🔴 Expired
+      </span>
+    );
+  }
+
+  if (hoursLeft <= 24) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-500 bg-amber-50 px-2 py-0.5 rounded-full">
+        🟡 Expires Tomorrow
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+      🟢 Active
+    </span>
+  );
+}
+
 function Home() {
   const [url, setUrl] = useState("");
   const [customAlias, setCustomAlias] = useState("");
@@ -142,14 +179,17 @@ function Home() {
         <div className="mt-6 bg-white border border-gray-200 rounded-2xl px-5 py-4 shadow-sm">
           <p className="text-xs text-gray-400 mb-2">Your short link</p>
           <div className="flex items-center justify-between gap-3">
-            <a
-              href={`${BASE_URL}/${result.shortCode}`}
-              target="_blank"
-              rel="noreferrer"
-              className="text-sm font-medium text-gray-900 hover:underline truncate"
-            >
-              {BASE_URL}/{result.shortCode}
-            </a>
+            <div className="flex flex-col gap-1 min-w-0">
+              <a
+                href={`${BASE_URL}/${result.shortCode}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-sm font-medium text-gray-900 hover:underline truncate"
+              >
+                {BASE_URL}/{result.shortCode}
+              </a>
+              <LinkStatusBadge expiresAt={result.expiresAt} />
+            </div>
             <div className="mt-6 flex flex-col items-center">
 
             <img
@@ -209,13 +249,7 @@ function Home() {
                   <p className="text-xs text-gray-400 truncate mt-0.5">{item.originalUrl}</p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                  {item.expiresAt && (
-                    <span className={`text-xs px-1.5 py-0.5 rounded-md ${new Date() > new Date(item.expiresAt) ? "bg-red-50 text-red-400" : "bg-amber-50 text-amber-500"}`}>
-                      {new Date() > new Date(item.expiresAt)
-                        ? "Expired"
-                        : `Exp: ${new Date(item.expiresAt).toLocaleDateString()}`}
-                    </span>
-                  )}
+                  <LinkStatusBadge expiresAt={item.expiresAt} />
                   <div className="flex items-center gap-1 text-xs text-gray-400">
                     <BarChart2 size={12} />
                     {item.clicks}

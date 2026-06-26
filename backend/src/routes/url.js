@@ -103,6 +103,7 @@ router.post("/shorten", optionalAuth, async (req, res) => {
       shortUrl: `${baseUrl}/${url.shortCode}`,
       clicks: 0,
       qrCode: url.qrCode,
+      expiresAt: url.expiresAt,
     });
   } catch (err) {
     console.error("❌ Error creating short link:", err);
