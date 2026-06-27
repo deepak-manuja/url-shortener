@@ -1,15 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 import { Routes, Route, Link, useNavigate, useParams } from "react-router-dom";
 import { Toaster, toast } from "react-hot-toast";
-import { Copy, ExternalLink, BarChart2, ChevronDown, ChevronUp, ArrowRight, LogOut, User, Lock } from "lucide-react";
-import { shortenUrl, getAllUrls } from "./api";
+import { Copy, ExternalLink, BarChart2, ChevronDown, ChevronUp, ArrowRight, LogOut, User, Lock, Trash2 } from "lucide-react";
+import { shortenUrl, getAllUrls, deleteUrl } from "./api";
 import { verifyPin } from "./api";
 import { useAuth } from "./context/AuthContext";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-const BASE_URL = import.meta.env.DEV 
+
+const BASE_URL = import.meta.env.DEV
   ? "http://localhost:5174"  // Development
   : "https://www.spliter.xyz";  // Production
 
@@ -61,6 +62,17 @@ function Home() {
   const [history, setHistory] = useState([]);
   const { user } = useAuth();
 
+  const handleDelete = async (code) => {
+    if (!confirm("Delete this link?")) return;
+    try {
+      await deleteUrl(code);
+      setHistory((prev) => prev.filter((item) => item.shortCode !== code));
+      toast.success("Link deleted");
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Failed to delete");
+    }
+  };
+
   useEffect(() => {
     if (user) fetchHistory();
     else setHistory([]);
@@ -70,7 +82,7 @@ function Home() {
     try {
       const res = await getAllUrls();
       setHistory(res.data);
-    } catch {}
+    } catch { }
   };
 
   const handleSubmit = async (e) => {
@@ -136,51 +148,51 @@ function Home() {
         </button>
 
         {showAdvanced && (
-  <div className="mt-3 bg-white border border-gray-200 rounded-2xl px-4 py-4 shadow-sm">
+          <div className="mt-3 bg-white border border-gray-200 rounded-2xl px-4 py-4 shadow-sm">
 
-    <label className="text-xs text-gray-400 mb-1 block">Custom alias</label>
-    <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
-      <span className="text-xs text-gray-400">{BASE_URL}/</span>
-      <input
-        type="text"
-        value={customAlias}
-        onChange={(e) => setCustomAlias(e.target.value.replace(/\s/g, ""))}
-        placeholder="my-link"
-        className="flex-1 text-sm bg-transparent outline-none text-gray-700 placeholder:text-gray-300"
-      />
-    </div>
+            <label className="text-xs text-gray-400 mb-1 block">Custom alias</label>
+            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
+              <span className="text-xs text-gray-400">{BASE_URL}/</span>
+              <input
+                type="text"
+                value={customAlias}
+                onChange={(e) => setCustomAlias(e.target.value.replace(/\s/g, ""))}
+                placeholder="my-link"
+                className="flex-1 text-sm bg-transparent outline-none text-gray-700 placeholder:text-gray-300"
+              />
+            </div>
 
-    <div className="mt-3 flex gap-3">
-      <div className="flex-1">
-        <label className="text-xs text-gray-400 mb-1 block">Expiry (Days)</label>
-        <input
-          type="number"
-          min="1"
-          value={expiryDays}
-          onChange={(e) => setExpiryDays(e.target.value)}
-          placeholder="e.g. 7"
-          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-gray-400 transition-colors"
-        />
-      </div>
-      <div className="flex-1">
-        <label className="text-xs text-gray-400 mb-1 flex items-center gap-1">
-          <Lock size={10} /> PIN (4 digits)
-        </label>
-        <input
-          type="password"
-          inputMode="numeric"
-          maxLength={4}
-          value={pin}
-          onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
-          placeholder="e.g. 1234"
-          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-gray-400 transition-colors tracking-widest"
-        />
-      </div>
-    </div>
+            <div className="mt-3 flex gap-3">
+              <div className="flex-1">
+                <label className="text-xs text-gray-400 mb-1 block">Expiry (Days)</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={expiryDays}
+                  onChange={(e) => setExpiryDays(e.target.value)}
+                  placeholder="e.g. 7"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-gray-400 transition-colors"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="text-xs text-gray-400 mb-1 flex items-center gap-1">
+                  <Lock size={10} /> PIN (4 digits)
+                </label>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={4}
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                  placeholder="e.g. 1234"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-gray-400 transition-colors tracking-widest"
+                />
+              </div>
+            </div>
 
-  </div>
-)}
-        
+          </div>
+        )}
+
       </form>
 
       {result && (
@@ -207,19 +219,19 @@ function Home() {
             </div>
             <div className="mt-6 flex flex-col items-center">
 
-            <img
-            src={result.qrCode}
-            alt="QR Code"
-            className="w-40 h-40 rounded-lg border"
-             />
+              <img
+                src={result.qrCode}
+                alt="QR Code"
+                className="w-40 h-40 rounded-lg border"
+              />
 
-            <a
-            href={result.qrCode}
-            download={`${result.shortCode}.png`}
-            className="mt-4 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition"
-            >
-            Download QR
-            </a>
+              <a
+                href={result.qrCode}
+                download={`${result.shortCode}.png`}
+                className="mt-4 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition"
+              >
+                Download QR
+              </a>
 
             </div>
             <div className="flex items-center gap-2 shrink-0">
@@ -243,58 +255,69 @@ function Home() {
         </div>
       )}
 
-      {user && history.length > 0 && (
-        <div id="history" className="mt-12">
-          <p className="text-xs text-gray-400 mb-3 font-medium uppercase tracking-wider">My Links</p>
-          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-            {history.map((item, i) => (
-              <div
-                key={item._id}
-                className={`flex items-center gap-4 px-5 py-3.5 ${i !== history.length - 1 ? "border-b border-gray-100" : ""}`}
-              >
-                <div className="flex-1 min-w-0">
-                  <a
-                    href={`${BASE_URL}/${item.shortCode}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-sm font-medium text-gray-900 hover:underline"
-                  >
-                    {BASE_URL}/{item.shortCode}
-                  </a>
-                  <p className="text-xs text-gray-400 truncate mt-0.5">{item.originalUrl}</p>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <LinkStatusBadge expiresAt={item.expiresAt} />
-                  {item.passwordHash && (
-                    <span className="inline-flex items-center gap-1 text-xs font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">
-                      <Lock size={9} /> PIN
-                    </span>
-                  )}
-                  <div className="flex items-center gap-1 text-xs text-gray-400">
-                    <BarChart2 size={12} />
-                    {item.clicks}
-                  </div>
-                  <button
-                    onClick={() => copy(`${BASE_URL}/${item.shortCode}`)}
-                    className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-                  >
-                    <Copy size={13} className="text-gray-400" />
-                  </button>
-                </div>
-              </div>
-            ))}
+    {user && history.length > 0 && (
+  <div id="history" className="mt-12">
+    <p className="text-xs text-gray-400 mb-3 font-medium uppercase tracking-wider">My Links</p>
+    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+      {history.map((item, i) => (
+        <div
+          key={item._id}
+          className={`flex items-center gap-4 px-5 py-3.5 ${i !== history.length - 1 ? "border-b border-gray-100" : ""}`}
+        >
+          <div className="flex-1 min-w-0">
+            <a
+              href={`${BASE_URL}/${item.shortCode}`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-sm font-medium text-gray-900 hover:underline"
+            >
+              {BASE_URL}/{item.shortCode}
+            </a>
+            <p className="text-xs text-gray-400 truncate mt-0.5">{item.originalUrl}</p>
           </div>
-        </div>
-      )}
 
-      {!user && (
-        <div className="mt-10 text-center">
-          <p className="text-sm text-gray-400">
-            <Link to="/login" className="text-gray-900 font-medium hover:underline">Log in</Link>
-            {" "}to save and manage your links.
-          </p>
+          <div className="flex items-center gap-2 shrink-0">
+            <LinkStatusBadge expiresAt={item.expiresAt} />
+            {item.passwordHash && (
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">
+                <Lock size={9} /> PIN
+              </span>
+            )}
+            <div className="flex items-center gap-1 text-xs text-gray-400">
+              <BarChart2 size={12} />
+              {item.clicks}
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => copy(`${BASE_URL}/${item.shortCode}`)}
+                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <Copy size={13} className="text-gray-400" />
+              </button>
+              <button
+                onClick={() => handleDelete(item.shortCode)}
+                className="p-1.5 rounded-lg hover:bg-red-50 transition-colors"
+              >
+                <Trash2 size={13} className="text-red-400" />
+              </button>
+            </div>
+          </div>
+
         </div>
-      )}
+      ))}
+    </div>
+  </div>
+)}
+
+{!user && (
+  <div className="mt-10 text-center">
+    <p className="text-sm text-gray-400">
+      <Link to="/login" className="text-gray-900 font-medium hover:underline">Log in</Link>
+      {" "}to save and manage your links.
+    </p>
+  </div>
+)}
+
     </div>
   );
 }
