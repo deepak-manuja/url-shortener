@@ -47,4 +47,6 @@ export const getMe = () => api.get("/auth/me");
 
 export const deleteUrl = (code) => api.delete(`/${code}`);
 
+export const editUrl = (code, data) => api.patch(`/urls/${code}`, data);
+
 export const getAnalytics = (code) => api.get(`/analytics/${code}`);

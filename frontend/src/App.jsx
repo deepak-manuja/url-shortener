@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { Routes, Route, Link, useNavigate, useParams } from "react-router-dom";
 import { Toaster, toast } from "react-hot-toast";
-import { Copy, ExternalLink, BarChart2, ChevronDown, ChevronUp, ArrowRight, LogOut, User, Lock, Trash2 } from "lucide-react";
-import { shortenUrl, getAllUrls, deleteUrl } from "./api";
+import { Copy, ExternalLink, BarChart2, ChevronDown, ChevronUp, ArrowRight, LogOut, User, Lock, Trash2, Pencil, X } from "lucide-react";
+import { shortenUrl, getAllUrls, deleteUrl, editUrl } from "./api";
 import { verifyPin } from "./api";
 import { useAuth } from "./context/AuthContext";
 import Login from "./components/Login";
@@ -52,6 +52,209 @@ function LinkStatusBadge({ expiresAt }) {
   );
 }
 
+function EditModal({ item, onClose, onSaved }) {
+  const [originalUrl, setOriginalUrl] = useState(item.originalUrl);
+  const [alias, setAlias] = useState(item.shortCode);
+  const [expiresAt, setExpiresAt] = useState(
+    item.expiresAt ? new Date(item.expiresAt).toISOString().slice(0, 10) : ""
+  );
+  const [pin, setPin] = useState("");
+  const [clearPin, setClearPin] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    const payload = {};
+
+    if (originalUrl.trim() !== item.originalUrl)
+      payload.originalUrl = originalUrl.trim();
+
+    if (alias.trim().toLowerCase() !== item.shortCode)
+      payload.customAlias = alias.trim();
+
+    // expiresAt: send null to clear, ISO string to set, skip if unchanged
+    const currentExpiry = item.expiresAt
+      ? new Date(item.expiresAt).toISOString().slice(0, 10)
+      : "";
+    if (expiresAt !== currentExpiry)
+      payload.expiresAt = expiresAt ? new Date(expiresAt).toISOString() : null;
+
+    // pin: send null to clear, value to update, skip if untouched
+    if (clearPin) payload.pin = null;
+    else if (pin) payload.pin = pin;
+
+    if (Object.keys(payload).length === 0) {
+      onClose();
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await editUrl(item.shortCode, payload);
+      onSaved(res.data);
+      onClose();
+    } catch (err) {
+      setError(err.response?.data?.error || "Failed to save");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Close on backdrop click
+  const handleBackdrop = (e) => {
+    if (e.target === e.currentTarget) onClose();
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4"
+      onClick={handleBackdrop}
+    >
+      <div className="w-full max-w-md bg-white border border-gray-200 rounded-2xl shadow-lg px-6 py-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-base font-semibold text-gray-900">Edit link</h2>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <X size={15} className="text-gray-400" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSave} className="space-y-4">
+          {/* Original URL */}
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block">Destination URL</label>
+            <input
+              type="text"
+              value={originalUrl}
+              onChange={(e) => setOriginalUrl(e.target.value)}
+              className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 outline-none focus:border-gray-400 transition-colors"
+              placeholder="https://example.com/long-url"
+            />
+          </div>
+
+          {/* Custom alias */}
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block">Custom alias</label>
+            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
+              <span className="text-xs text-gray-400 shrink-0">
+                {import.meta.env.DEV ? "http://localhost:5174" : "https://www.spliter.xyz"}/
+              </span>
+              <input
+                type="text"
+                value={alias}
+                onChange={(e) =>
+                  setAlias(e.target.value.replace(/[^a-zA-Z0-9-]/g, "").slice(0, 20))
+                }
+                className="flex-1 text-sm bg-transparent outline-none text-gray-700 placeholder:text-gray-300"
+                placeholder="my-link"
+              />
+            </div>
+            <p className="text-xs text-gray-300 mt-1">3–20 chars, letters, numbers, hyphens</p>
+          </div>
+
+          {/* Expiry + PIN side by side */}
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className="text-xs text-gray-400 mb-1 block">Expiry date</label>
+              <div className="flex items-center gap-1">
+                <input
+                  type="date"
+                  value={expiresAt}
+                  onChange={(e) => setExpiresAt(e.target.value)}
+                  min={new Date().toISOString().slice(0, 10)}
+                  className="flex-1 text-sm border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-gray-400 transition-colors"
+                />
+                {expiresAt && (
+                  <button
+                    type="button"
+                    onClick={() => setExpiresAt("")}
+                    className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+                    title="Clear expiry"
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="flex-1">
+              <label className="text-xs text-gray-400 mb-1 flex items-center gap-1">
+                <Lock size={10} />
+                {item.passwordHash ? "Change PIN" : "Set PIN"}
+              </label>
+              {clearPin ? (
+                <div className="flex items-center gap-1">
+                  <span className="flex-1 text-xs text-gray-400 border border-dashed border-gray-200 rounded-xl px-3 py-2">
+                    PIN will be removed
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setClearPin(false)}
+                    className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1">
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={4}
+                    value={pin}
+                    onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                    placeholder={item.passwordHash ? "••••" : "e.g. 1234"}
+                    className="flex-1 text-sm border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-gray-400 transition-colors tracking-widest"
+                  />
+                  {item.passwordHash && (
+                    <button
+                      type="button"
+                      onClick={() => { setClearPin(true); setPin(""); }}
+                      className="p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-400 transition-colors"
+                      title="Remove PIN"
+                    >
+                      <X size={12} />
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {error && (
+            <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2">
+              {error}
+            </p>
+          )}
+
+          {/* Actions */}
+          <div className="flex gap-2 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 text-sm border border-gray-200 text-gray-600 py-2.5 rounded-xl hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 text-sm bg-gray-900 text-white py-2.5 rounded-xl hover:bg-gray-700 transition-colors disabled:opacity-40"
+            >
+              {loading ? "Saving..." : "Save changes"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function Home() {
   const [url, setUrl] = useState("");
   const [customAlias, setCustomAlias] = useState("");
@@ -63,6 +266,14 @@ function Home() {
   const [history, setHistory] = useState([]);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [editingItem, setEditingItem] = useState(null);
+
+  const handleSaved = (updated) => {
+    setHistory((prev) =>
+      prev.map((item) => (item._id === updated._id ? { ...item, ...updated } : item))
+    );
+    toast.success("Link updated!");
+  };
 
   const handleDelete = async (code) => {
     if (!confirm("Delete this link?")) return;
@@ -114,6 +325,7 @@ function Home() {
   };
 
   return (
+    <>
     <div className="max-w-2xl mx-auto px-4 pt-20 pb-12">
       <h1 className="text-4xl font-semibold text-gray-900 text-center mb-2 tracking-tight">
         Snip your links shorter.
@@ -305,6 +517,13 @@ function Home() {
                 <BarChart2 size={13} className="text-blue-400" />
               </button>
               <button
+                onClick={() => setEditingItem(item)}
+                className="p-1.5 rounded-lg hover:bg-amber-50 transition-colors"
+                title="Edit"
+              >
+                <Pencil size={13} className="text-amber-500" />
+              </button>
+              <button
                 onClick={() => handleDelete(item.shortCode)}
                 className="p-1.5 rounded-lg hover:bg-red-50 transition-colors"
                 title="Delete"
@@ -330,6 +549,15 @@ function Home() {
 )}
 
     </div>
+
+    {editingItem && (
+      <EditModal
+        item={editingItem}
+        onClose={() => setEditingItem(null)}
+        onSaved={handleSaved}
+      />
+    )}
+    </>
   );
 }
 

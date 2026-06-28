@@ -167,6 +167,74 @@ router.post("/verify-pin/:code", async (req, res) => {
   }
 });
 
+// PATCH /api/urls/:code — PROTECTED, edit own link
+router.patch("/urls/:code", protect, async (req, res) => {
+  try {
+    const code = req.params.code.toLowerCase().trim();
+    const { originalUrl, customAlias, expiresAt, pin } = req.body;
+
+    const url = await Url.findOne({ shortCode: code });
+    if (!url) return res.status(404).json({ error: "URL not found" });
+    if (url.userId?.toString() !== req.user._id.toString())
+      return res.status(403).json({ error: "Not authorized" });
+
+    // originalUrl
+    if (originalUrl !== undefined) {
+      if (!validUrl.isUri(originalUrl))
+        return res.status(400).json({ error: "Invalid URL" });
+      url.originalUrl = originalUrl;
+    }
+
+    // customAlias → changes shortCode
+    if (customAlias !== undefined) {
+      const newCode = customAlias.trim().toLowerCase().replace(/\s+/g, "-");
+      if (!/^[a-z0-9-]{3,20}$/.test(newCode))
+        return res.status(400).json({ error: "Alias must be 3-20 alphanumeric characters or hyphens" });
+      if (newCode !== url.shortCode) {
+        const taken = await Url.findOne({ shortCode: newCode });
+        if (taken) return res.status(400).json({ error: "Custom alias already taken" });
+        // Regenerate QR for the new short URL
+        const baseUrl = (process.env.BASE_URL || "").replace(/\/$/, "");
+        url.qrCode = await QRCode.toDataURL(`${baseUrl}/${newCode}`);
+        url.shortCode = newCode;
+      }
+    }
+
+    // expiresAt — null clears it, date string sets it
+    if (expiresAt !== undefined) {
+      url.expiresAt = expiresAt ? new Date(expiresAt) : null;
+    }
+
+    // pin — null clears it, string sets/updates it
+    if (pin !== undefined) {
+      if (pin === null || pin === "") {
+        url.passwordHash = null;
+      } else {
+        if (!/^\d{4}$/.test(pin))
+          return res.status(400).json({ error: "PIN must be exactly 4 digits" });
+        url.passwordHash = await bcrypt.hash(pin, 10);
+      }
+    }
+
+    await url.save();
+
+    res.json({
+      _id: url._id,
+      shortCode: url.shortCode,
+      originalUrl: url.originalUrl,
+      expiresAt: url.expiresAt,
+      clicks: url.clicks,
+      qrCode: url.qrCode,
+      passwordHash: url.passwordHash,
+      isPasswordProtected: !!url.passwordHash,
+      createdAt: url.createdAt,
+    });
+  } catch (err) {
+    console.error("❌ Edit error:", err);
+    res.status(500).json({ error: "Server error: " + err.message });
+  }
+});
+
 // GET /api/all — PROTECTED, sirf apne links
 router.get("/all", protect, async (req, res) => {
   try {
