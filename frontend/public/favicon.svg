@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Snip icon">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2b6ef4" />
+      <stop offset="100%" stop-color="#9b2cfd" />
+    </linearGradient>
+    <linearGradient id="chain" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#e5e7eb" stop-opacity="0.95" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#bg)" />
+  <g filter="url(#shadow)">
+    <path d="M18 25C18 21.6863 20.6863 19 24 19H32C35.3137 19 38 21.6863 38 25V29C38 32.3137 35.3137 35 32 35H24C20.6863 35 18 32.3137 18 29V25Z" fill="url(#chain)" />
+    <path d="M26 29L38 41" stroke="#fff" stroke-width="4" stroke-linecap="round" />
+    <path d="M26 41C26 44.3137 23.3137 47 20 47C16.6863 47 14 44.3137 14 41C14 37.6863 16.6863 35 20 35C23.3137 35 26 37.6863 26 41Z" fill="none" stroke="#fff" stroke-width="4" />
+    <path d="M50 17C53.3137 17 56 19.6863 56 23C56 26.3137 53.3137 29 50 29C46.6863 29 44 26.3137 44 23C44 19.6863 46.6863 17 50 17Z" fill="none" stroke="#fff" stroke-width="4" />
+    <path d="M38 23C38 19.6863 40.6863 17 44 17H52C55.3137 17 58 19.6863 58 23V35C58 38.3137 55.3137 41 52 41H44C40.6863 41 38 38.3137 38 35V31" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M42 39L48 45L58 35" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+</svg>
