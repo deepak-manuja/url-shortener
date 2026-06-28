@@ -2,7 +2,7 @@ const express = require("express");
 const authRoutes = require("./routes/auth");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const UAParser = require("ua-parser-js");
+const { UAParser } = require("ua-parser-js");
 const fetch = require("node-fetch");
 require("dotenv").config();
 
@@ -64,17 +64,14 @@ app.get("/:code", async (req, res) => {
     // Fire-and-forget click logging — do NOT await, never delay the redirect
     (async () => {
       try {
-        const ua = UAParser(req.headers["user-agent"] || "");
-
-        // Device type
-        const deviceType = ua.device?.type;
+        const ua = new UAParser(req.headers["user-agent"] || "");
+        const deviceType = ua.getDevice().type;
         const device = deviceType === "mobile"
           ? "mobile"
           : deviceType === "tablet"
           ? "tablet"
           : "desktop";
-
-        const browser = ua.browser?.name || "Unknown";
+        const browser = ua.getBrowser().name || "Unknown";
 
         // Referrer
         const referrer = req.headers["referer"] || req.headers["referrer"] || "Direct";

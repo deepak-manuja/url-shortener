@@ -20,16 +20,12 @@ router.get("/:code", protect, async (req, res) => {
 
     // Run all aggregations in parallel
     const [
-      totalClicksDocs,
       clicksOverTime,
       topCountries,
       deviceBreakdown,
       topBrowsers,
       recentClicks,
     ] = await Promise.all([
-
-      // Total clicks
-      Click.countDocuments({ shortCode: code }),
 
       // Clicks per day for last 30 days
       Click.aggregate([
@@ -94,7 +90,7 @@ router.get("/:code", protect, async (req, res) => {
     });
 
     res.json({
-      totalClicks: totalClicksDocs,
+      totalClicks: url.clicks,          // use Url.clicks — always accurate, includes pre-analytics history
       clicksOverTime: filledDays,
       topCountries,
       deviceBreakdown: deviceMap,
