@@ -8,6 +8,7 @@ import { useAuth } from "./context/AuthContext";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Analytics from "./pages/Analytics";
 
 
 const BASE_URL = import.meta.env.DEV
@@ -61,6 +62,7 @@ function Home() {
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState([]);
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const handleDelete = async (code) => {
     if (!confirm("Delete this link?")) return;
@@ -291,12 +293,21 @@ function Home() {
               <button
                 onClick={() => copy(`${BASE_URL}/${item.shortCode}`)}
                 className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                title="Copy"
               >
                 <Copy size={13} className="text-gray-400" />
               </button>
               <button
+                onClick={() => navigate(`/analytics/${item.shortCode}`)}
+                className="p-1.5 rounded-lg hover:bg-blue-50 transition-colors"
+                title="Analytics"
+              >
+                <BarChart2 size={13} className="text-blue-400" />
+              </button>
+              <button
                 onClick={() => handleDelete(item.shortCode)}
                 className="p-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                title="Delete"
               >
                 <Trash2 size={13} className="text-red-400" />
               </button>
@@ -572,6 +583,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/analytics/:code" element={<Analytics />} />
         <Route path="/:code" element={<Redirect />} />
       </Routes>
     </div>

@@ -14,7 +14,9 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^8.3.4",
     "nanoid": "^3.3.7",
+    "node-fetch": "^2.7.0",
     "qrcode": "^1.5.4",
+    "ua-parser-js": "^2.0.10",
     "valid-url": "^1.0.9"
   },
   "devDependencies": {

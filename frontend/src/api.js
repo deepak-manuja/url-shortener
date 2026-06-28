@@ -46,3 +46,5 @@ export const loginUser = (email, password) =>
 export const getMe = () => api.get("/auth/me");
 
 export const deleteUrl = (code) => api.delete(`/${code}`);
+
+export const getAnalytics = (code) => api.get(`/analytics/${code}`);

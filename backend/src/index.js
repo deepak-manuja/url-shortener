@@ -2,10 +2,14 @@ const express = require("express");
 const authRoutes = require("./routes/auth");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const UAParser = require("ua-parser-js");
+const fetch = require("node-fetch");
 require("dotenv").config();
 
 const urlRoutes = require("./routes/url");
+const analyticsRoutes = require("./routes/analytics");
 const Url = require("./models/Url");
+const Click = require("./models/Click");
 
 const app = express();
 
@@ -23,6 +27,7 @@ app.use(express.json());
 
 // Routes
 app.use("/api", urlRoutes);
+app.use("/api/analytics", analyticsRoutes);
 app.use("/api/auth", authRoutes);
 
 // Redirect short URL
@@ -55,6 +60,58 @@ app.get("/:code", async (req, res) => {
     await url.save();
 
     console.log(`✅ Redirecting ${code} (clicks: ${url.clicks}) to:`, url.originalUrl);
+
+    // Fire-and-forget click logging — do NOT await, never delay the redirect
+    (async () => {
+      try {
+        const ua = UAParser(req.headers["user-agent"] || "");
+
+        // Device type
+        const deviceType = ua.device?.type;
+        const device = deviceType === "mobile"
+          ? "mobile"
+          : deviceType === "tablet"
+          ? "tablet"
+          : "desktop";
+
+        const browser = ua.browser?.name || "Unknown";
+
+        // Referrer
+        const referrer = req.headers["referer"] || req.headers["referrer"] || "Direct";
+
+        // Real IP (handle proxies)
+        const rawIp = req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "";
+        const ip = rawIp.split(",")[0].trim();
+
+        let country = "Unknown";
+        let city = "Unknown";
+
+        // Skip geo lookup for localhost IPs
+        const isLocal = ip === "::1" || ip === "127.0.0.1" || ip.startsWith("192.168") || ip.startsWith("10.");
+        if (!isLocal && ip) {
+          const geo = await fetch(`http://ip-api.com/json/${ip}?fields=country,city,status`)
+            .then((r) => r.json())
+            .catch(() => null);
+          if (geo?.status === "success") {
+            country = geo.country || "Unknown";
+            city = geo.city || "Unknown";
+          }
+        }
+
+        await Click.create({
+          urlId: url._id,
+          shortCode: code,
+          device,
+          browser,
+          referrer,
+          country,
+          city,
+        });
+      } catch (logErr) {
+        console.error("⚠️ Click logging failed:", logErr.message);
+      }
+    })();
+
     res.redirect(url.originalUrl);
   } catch (err) {
     console.error("❌ Redirect error:", err);
