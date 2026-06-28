@@ -327,15 +327,15 @@ function Home() {
   return (
     <>
     <div className="max-w-2xl mx-auto px-4 pt-20 pb-12">
-      <h1 className="text-4xl font-semibold text-gray-900 text-center mb-2 tracking-tight">
+      <h1 className="text-5xl sm:text-6xl font-extrabold text-center mb-3 tracking-tight brand-gradient leading-[1.05]">
         Snip your links shorter.
       </h1>
-      <p className="text-center text-gray-400 text-sm mb-10">
-        Fast, free URL shortener with click analytics.
+      <p className="text-center text-gray-500 text-base mb-10">
+        Fast, free URL shortener with click analytics. Custom aliases, PIN protection & expiry built-in.
       </p>
 
       <form onSubmit={handleSubmit}>
-        <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-2xl px-4 py-3 shadow-sm">
+        <div className="flex items-center gap-2 card-elevated rounded-2xl px-4 py-3 focus-within:ring-2 focus-within:ring-indigo-200 transition-all">
           <input
             type="text"
             value={url}
@@ -346,7 +346,7 @@ function Home() {
           <button
             type="submit"
             disabled={loading || !url.trim()}
-            className="p-2 rounded-xl bg-gray-900 text-white hover:bg-gray-700 transition-colors disabled:opacity-40"
+            className="p-2.5 rounded-xl bg-gradient-to-br from-indigo-600 to-pink-500 text-white hover:opacity-90 transition-all shadow-md shadow-indigo-500/20 disabled:opacity-40"
           >
             <ArrowRight size={16} />
           </button>
@@ -761,12 +761,12 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f7f5] font-sans">
+    <div className="min-h-screen font-sans flex flex-col">
       <Toaster position="top-right" toastOptions={{ style: { fontSize: "14px" } }} />
 
-      <nav className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
+      <nav className="flex items-center justify-between px-6 py-4 border-b border-gray-200/70 bg-white/70 backdrop-blur sticky top-0 z-40">
         <div className="flex items-center gap-6">
-          <Link to="/" className="text-lg font-semibold tracking-tight text-gray-900">✂ Snip</Link>
+          <Link to="/" className="text-xl font-extrabold tracking-tight brand-gradient">✂ Snip</Link>
           <a
             href="https://github.com/deepak-manuja"
             target="_blank"
@@ -798,7 +798,7 @@ export default function App() {
               </Link>
               <Link
                 to="/signup"
-                className="text-sm bg-gray-900 text-white px-3 py-1.5 rounded-lg hover:bg-gray-700 transition-colors"
+                className="text-sm bg-gradient-to-br from-indigo-600 to-pink-500 text-white px-3.5 py-1.5 rounded-lg hover:opacity-90 transition-all shadow-md shadow-indigo-500/20"
               >
                 Sign up
               </Link>
@@ -807,13 +807,34 @@ export default function App() {
         </div>
       </nav>
 
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/analytics/:code" element={<Analytics />} />
-        <Route path="/:code" element={<Redirect />} />
-      </Routes>
+      <main className="flex-1">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/analytics/:code" element={<Analytics />} />
+          <Route path="/:code" element={<Redirect />} />
+        </Routes>
+      </main>
+
+      <footer className="mt-12 border-t border-gray-200/70 bg-white/60 backdrop-blur">
+        <div className="max-w-5xl mx-auto px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-sm text-gray-500">
+            &copy; {new Date().getFullYear()} <span className="font-semibold brand-gradient">Snip</span>. All rights reserved.
+          </p>
+          <p className="text-sm text-gray-600">
+            Made with <span className="heart-beat text-pink-500" aria-label="love">❤️</span> by{" "}
+            <a
+              href="https://github.com/deepak-manuja"
+              target="_blank"
+              rel="noreferrer"
+              className="font-semibold brand-gradient hover:underline"
+            >
+              Deepak
+            </a>
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }

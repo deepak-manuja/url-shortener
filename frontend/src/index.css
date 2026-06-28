@@ -1,8 +1,57 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-  background-color: #f7f7f5;
-  color: #1a1a1a;
+:root {
+  --bg-1: #f7f7f5;
+  --bg-2: #eef1f6;
+  --accent: #4f46e5;
+  --accent-2: #ec4899;
 }
+
+html, body, #root {
+  min-height: 100%;
+}
+
+body {
+  color: #1a1a1a;
+  font-family: 'Inter', system-ui, sans-serif;
+  background:
+    radial-gradient(1100px 600px at 8% -10%, rgba(99,102,241,0.10), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgba(236,72,153,0.08), transparent 60%),
+    radial-gradient(700px 500px at 50% 100%, rgba(16,185,129,0.06), transparent 60%),
+    linear-gradient(180deg, #fafafa 0%, #f3f4f7 100%);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Subtle elevated card style helper */
+.card-elevated {
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: saturate(140%) blur(8px);
+  border: 1px solid rgba(15,23,42,0.06);
+  box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 8px 30px -12px rgba(15,23,42,0.10);
+}
+
+.brand-gradient {
+  background: linear-gradient(135deg, #111827 0%, #4f46e5 55%, #ec4899 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.heart-beat {
+  display: inline-block;
+  animation: heartBeat 1.4s ease-in-out infinite;
+}
+@keyframes heartBeat {
+  0%, 100% { transform: scale(1); }
+  20% { transform: scale(1.18); }
+  40% { transform: scale(0.96); }
+  60% { transform: scale(1.1); }
+}
+
+/* Polish primary buttons slightly without breaking existing classes */
+button, a { -webkit-tap-highlight-color: transparent; }
